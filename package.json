@@ -38,7 +38,6 @@
     "npmlog": "^0.1.1",
     "run-sequence": "^1.0.2",
     "shelljs": "^0.3.0",
-    "tap": "^0.4.13",
     "tape": "^3.0.3",
     "vinyl-buffer": "^1.0.0",
     "vinyl-source-stream": "^1.0.0",
