@@ -1,0 +1,19 @@
+{
+  "name": "getting-started-with-gulp-and-browserify",
+  "version": "1.0.0",
+  "description": "A skeleton project for a gulp+browserify website",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/booleangate/getting-started-with-gulp-and-browserify.git"
+  },
+  "author": "Justin Johnson <me@justinjohnson.org> (http://justinjohnson.org/)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/booleangate/getting-started-with-gulp-and-browserify/issues"
+  },
+  "homepage": "https://github.com/booleangate/getting-started-with-gulp-and-browserify"
+}
