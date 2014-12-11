@@ -297,10 +297,10 @@ gulp.task("lint", function() {
 
 
 /**
- * Run tests with tape and cleanup the output with TAP-dot.
+ * Run tests with tape and cleanup the output with faucet.
  */
 gulp.task("test", function() {
-	shell.exec("tape " + TESTS_GLOB + " | node_modules/.bin/tap-dot");
+	shell.exec("tape " + TESTS_GLOB + " | faucet");
 });
 
 

@@ -23,4 +23,4 @@ User.prototype.isAdult = function() {
 	return this.age >= 18;
 };
 
-modules.exports = User;
+module.exports = User;
