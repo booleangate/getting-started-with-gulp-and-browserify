@@ -1,25 +1,44 @@
 /*
  * Gentlemen ... behold! Dependencies! 
- * require404 is defined below.
  */
-var _ = require404("lodash");
-var buffer = require404("vinyl-buffer");
-var browserify = require404("browserify");
-var concat = require404("gulp-concat");
-var file = require404("read-file");
-var forEach = require404("gulp-foreach");
-var gulp = require404("gulp");
-var jshint = require404("gulp-jshint");
-var log = require404("npmlog");
-var rename = require404("gulp-rename");
-var runSequence = require404("run-sequence");
-var shell = require404("shelljs");
-var size = require404("gulp-size");
-var source = require404("vinyl-source-stream");
-var sourcemaps = require404("gulp-sourcemaps");
-var uglify = require404("gulp-uglify");
-var util = require404("gulp-util");
-var watchify = require404("watchify");
+try {
+	var _ = require("lodash");
+	var buffer = require("vinyl-buffer");
+	var browserify = require("browserify");
+	var concat = require("gulp-concat");
+	var file = require("read-file");
+	var forEach = require("gulp-foreach");
+	var gulp = require("gulp");
+	var jshint = require("gulp-jshint");
+	var log = require("npmlog");
+	var rename = require("gulp-rename");
+	var runSequence = require("run-sequence");
+	var shell = require("shelljs");
+	var size = require("gulp-size");
+	var source = require("vinyl-source-stream");
+	var sourcemaps = require("gulp-sourcemaps");
+	var uglify = require("gulp-uglify");
+	var util = require("gulp-util");
+	var watchify = require("watchify");
+} catch (e) {
+	// Unknown error, rethrow it.	
+	if (e.code !== "MODULE_NOT_FOUND") {
+		throw e;
+	}
+	
+	// Otherwise, we have a missing dependency. If the module is in the dependency list, the user just needs to run `npm install`.  
+	// Otherwise, they need to install and save it.  
+	var dependencies = require("./package.json").devDependencies;
+	var module = e.toString().match(/'(.*?)'/)[1];
+	var command = "npm install";
+	
+	if (typeof dependencies[module] === "undefined") {
+		command += " --save-dev " + module;
+	}
+	
+	console.error(e.toString() + ". Fix this by executing:\n\n" + command + "\n");
+	process.exit(1);
+}
 
 
 /*
@@ -62,35 +81,6 @@ log.enableColor();
 /*
  * Helper functions
  */
-
-
-/**
- * Just like require, but if an error occurrs because a module is not found, an error message will be produced that will
- * tell you how to fix it.
- */
-function require404(module) {
-	try {
-		return require(module);
-	} catch (e) {
-		// Unknown error, rethrow it.	
-		if (e.code !== "MODULE_NOT_FOUND") {
-			throw e;
-		}
-		
-		// Otherwise, we have a missing dependency. If the module is in the dependency list, the user just needs to run `npm install`.  
-		// Otherwise, they need to install and save it.  
-		var dependencies = require("./package.json").devDependencies;
-		var command = "npm install";
-		
-		if (typeof dependencies[module] === "undefined") {
-			command += " --save-dev " + module;
-		}
-		
-		console.error(e.toString() + ". Fix this by executing:\n\n" + command + "\n");
-		process.exit(1);
-	}
-}
-
 
 
 /**
@@ -247,7 +237,6 @@ gulp.task("build-common-lib", ["housekeeping"], function() {
  * application and should have its own resultant bundle.  
  */
 gulp.task("build", ["housekeeping"], function() {
-	console.log(APPS_GLOB);
 	var stream = gulp.src(APPS_GLOB)
 		.pipe(forEach(function(stream, file) {
 			bundle(file, getBundler(file));

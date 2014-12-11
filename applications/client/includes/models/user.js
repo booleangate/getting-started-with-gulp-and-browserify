@@ -1,5 +1,3 @@
-var YEAR_SECONDS = 31556908.8;
-
 // Pulled from http://stackoverflow.com/questions/4060004/calculate-age-in-javascript for example's sake
 function calculateAge(birthday) { // birthday is a date
     var ageDifMs = Date.now() - birthday.getTime();
