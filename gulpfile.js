@@ -28,7 +28,7 @@ var watchify = require404("watchify");
 const JS_BASE_DIR = "./application/client/";
 const APPS_GLOB = JS_BASE_DIR + "/apps/**/*.js";
 const APPS_DIST_DIR = "./public_html/javascript/apps/";
-const TEST_BASE_DIR = "./tests/client/";
+const TESTS_GLOB = "./tests/client/**/*.js";
 
 const EXTERNAL_LIBS = {
 	jquery: "./node_modules/jquery/dist/jquery.min.js",
@@ -51,7 +51,7 @@ const LINT_OPTS = {
 
 // Always add JS_BASE_DIR to the NODE_PATH environment variable.  This allows us to include our own modules
 // with simple paths (no crazy ../../../../relative/paths) without having to resort to a symlink in node_modules 
-// or other transforms that would add time to our build.  For example, from application/client/apps/public/login/index.js, 
+// or other transforms that would add time to our build.  For example, from application/client/apps/login/index.js, 
 // we can do `require("properties")` instead of `require("../../../properties")`
 process.env.NODE_PATH = JS_BASE_DIR + ":" + (process.env.NODE_PATH || "");
 
@@ -280,8 +280,8 @@ gulp.task("autobuild", ["housekeeping"], function() {
 			var bundler = watchify(getBundler(file, watchify.args));
 			
 			function rebundle() {
-				// When an automatic build happens, create a flag file so that we can prevent commits of these bundles because of
-				// the full paths that it has to include.  A Git pre-commit hook will look for and block commits if this file exists.
+				// When an automatic build happens, create a flag file so that we can prevent committing these bundles because of
+				// the full paths that they have to include.  A Git pre-commit hook will look for and block commits if this file exists.
 				// A manual build is require before bundled assets can be committed as it will remove this flag file.
 				shell.exec("touch " + AUTOBUILD_FLAG_FILE);
 				
@@ -296,19 +296,19 @@ gulp.task("autobuild", ["housekeeping"], function() {
 
 
 /**
- * Run tests with tape and cleanup the output with faucet.
+ * Run tests with tape and cleanup the output with TAP-dot.
  */
 gulp.task("test", function() {
-	shell.exec("tape " + TEST_BASE_DIR + "**/*.js | faucet");
+	shell.exec("tape " + TESTS_GLOB + " | node_modules/.bin/tap-dot");
 });
 
 
 /**
  * Automatically run tests anytime anything is changed (tests or test subjects).
  */
-gulp.task("autotest", ["housekeeping"], function() {
+gulp.task("autotest", function() {
 	gulp.watch(
-		[JS_BASE_DIR + "**/*.js", TEST_BASE_DIR + "**/*.js"], 
+		[JS_BASE_DIR + "**/*.js", TESTS_GLOB], 
 		["test"]
 	);
 });
