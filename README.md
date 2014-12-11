@@ -25,3 +25,14 @@ This project provides the following gulp tasks
 ## Git Hooks
 
 * `pre-commit` – Makes sure that automatically built application bundles are not checked in.  Bundles must be built normally (with `gulp` or `gulp build`).  Bundles built automatically with Watching necessarily contain full absolute path information that shouldn't be committed.
+
+# Installing
+
+Simply clone this repository and then run 
+
+    npm install
+    
+Once the install is complete, you can run the full gulp build with
+
+    gulp
+    
