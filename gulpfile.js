@@ -25,8 +25,8 @@ var watchify = require404("watchify");
 /*
  * Configuration
  */
-const JS_BASE_DIR = "./application/client/";
-const APPS_GLOB = JS_BASE_DIR + "/apps/**/*.js";
+const JS_BASE_DIR = "./applications/client/";
+const APPS_GLOB = JS_BASE_DIR + "apps/**/*.js";
 const APPS_DIST_DIR = "./public_html/javascript/apps/";
 const TESTS_GLOB = "./tests/client/**/*.js";
 
@@ -127,8 +127,8 @@ function getBundler(file, options) {
  */
 function bundle(file, bundler) {
 	// Remove file.base from file.path to create a relative path.  For example, if file looks like
-	//   file.base === "/Users/johnsonj/dev/web/super-project/application/client/apps/"
-	//   file.path === "/Users/johnsonj/dev/web/super-project/application/client/apps/login/reset-password/confirm.js"
+	//   file.base === "/Users/johnsonj/dev/web/super-project/applications/client/apps/"
+	//   file.path === "/Users/johnsonj/dev/web/super-project/applications/client/apps/login/reset-password/confirm.js"
 	// then result is "login/reset-password/confirm.js"
 	var relativeFilename = file.path.replace(file.base, "");
 	
@@ -217,16 +217,6 @@ gulp.task("housekeeping", function() {
 
 
 /**
- * Linter for the most basic of quality assurance.
- */
-gulp.task("lint", function() {
-	return gulp.src(JS_BASE_DIR + "**/*.js")
-		.pipe(jshint(LINT_OPTS))
-		.pipe(jshint.reporter("default"));
-});
-
-
-/**
  * Externalize all site-wide libraries into one file.  Since these libraries are all sizable, it would be better for the
  * client to request it individually once and then retreive it from the cache than to include all of these files into
  * each and every browserified application. 
@@ -257,6 +247,7 @@ gulp.task("build-common-lib", ["housekeeping"], function() {
  * application and should have its own resultant bundle.  
  */
 gulp.task("build", ["housekeeping"], function() {
+	console.log(APPS_GLOB);
 	var stream = gulp.src(APPS_GLOB)
 		.pipe(forEach(function(stream, file) {
 			bundle(file, getBundler(file));
@@ -292,6 +283,16 @@ gulp.task("autobuild", ["housekeeping"], function() {
 			
 			return rebundle();
 		}));
+});
+
+
+/**
+ * Linter for the most basic of quality assurance.
+ */
+gulp.task("lint", function() {
+	return gulp.src(JS_BASE_DIR + "**/*.js")
+		.pipe(jshint(LINT_OPTS))
+		.pipe(jshint.reporter("default"));
 });
 
 
