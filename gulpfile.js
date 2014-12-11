@@ -67,6 +67,7 @@ const LINT_OPTS = {
 	eqnull: true,
 	jquery: true
 };
+const ALLOW_NPM_MODULE_MANAGEMENT = true;
 
 // Always add JS_BASE_DIR to the NODE_PATH environment variable.  This allows us to include our own modules
 // with simple paths (no crazy ../../../../relative/paths) without having to resort to a symlink in node_modules 
@@ -131,17 +132,17 @@ function bundle(file, bundler) {
 		.pipe(source(relativeFilename))
 		// Convert stream to a buffer
 		.pipe(buffer())
-		// Save the source map for later
+		// Save the source map for later (uglify will remove it since it is a comment)
 		.pipe(sourcemaps.init({loadMaps: true}))
 		// Save normal source (useful for debugging)
 		.pipe(gulp.dest(APPS_DIST_DIR))
 		// Minify source for production
 		.pipe(uglify())
-		// Save source maps (since minification will remove them)
+		// Restore the sourceMap
 		.pipe(sourcemaps.write())
 		// Add the .min suffix before the extension
 		.pipe(rename({suffix: ".min"}))
-		// Debuging output
+		// Log the bundle size
 		.pipe(size(SIZE_OPTS))
 		// Write the minified file.
 		.pipe(gulp.dest(APPS_DIST_DIR));
@@ -156,18 +157,13 @@ function bundle(file, bundler) {
 /**
  * Ensure that our project is always setup correctly.  So far this includes two things:
  *  1. Make sure git hooks are installed
- *  2. Make sure npm dependencies are current
+ *  2. Make sure npm dependencies are current (optional)
  * 
  * #2 is achieved by keeping track of the last commit ID in which we updated dependencies.  If 
  * the current state of the repo does not have that commit ID, then we will update dependencies
- * and the ID in that file.  It's a clumsy approach, but it works for now.
+ * and the ID in that file.  It's a naive approach, but it works for now.
  */
 gulp.task("housekeeping", function() {
-	// Get the current repo ID.
-	var currentId = shell.exec("git rev-parse HEAD", {silent: true}).output;
-	// The last commit ID that we automatically updated on
-	var lastId = null;
-	
 	// Ensure that the git client-side hooks are installed.
 	gulp.src("assets/git/hooks/*")
 		.pipe(forEach(function(stream, file) {
@@ -178,10 +174,19 @@ gulp.task("housekeeping", function() {
 			// Make sure the hook is executable.
 			shell.chmod("ug+x", file.path);
 	
-			// Don't use `shell.ln("-sf", src, dest);`  This will create the symlink with an absolute path which will
-			// break if you ever move this repo.
+			// Don't use `shell.ln("-sf", src, dest);`  This will create the symlink with an absolute path 
+			// which will break if you ever move this repo.
 			shell.exec("ln -sf " + src + " " + dest);
 		}));
+	
+	// If we are not allowed to manage npm modules, there is nothing else to do.
+	if (!ALLOW_NPM_MODULE_MANAGEMENT) {
+		return;
+	}
+	
+	// Get the current repo ID.
+	var currentId = shell.exec("git rev-parse HEAD", {silent: true}).output,
+		lastId = null;
 	
 	// Get the last repo ID at which we updated the npm dependencies.
 	try {
@@ -214,18 +219,19 @@ gulp.task("housekeeping", function() {
 gulp.task("build-common-lib", ["housekeeping"], function() {
 	var paths = [];
 	
+	// Get just the path to each externalizable lib.
 	_.forEach(EXTERNAL_LIBS, function(path) {
 		paths.push(path);
 	});
 	
 	return gulp.src(paths)
-		// Output each file that will be concatenated into the common.js file
+		// Log each file that will be concatenated into the common.js file
 		.pipe(size(SIZE_OPTS))
 		// Concatenate all files
 		.pipe(concat("common.min.js"))
 		// Minify the result
 		.pipe(uglify())
-		// Output the new file size
+		// Log the new file size
 		.pipe(size(SIZE_OPTS))
 		// Save that file to the appropriate location
 		.pipe(gulp.dest(APPS_DIST_DIR + "../lib/"));
@@ -250,7 +256,7 @@ gulp.task("build", ["housekeeping"], function() {
 
 
 /**
- * Watch applications and their dependencies for changes and automatically rebuild them.  This will keep build time small since
+ * Watch applications and their dependencies for changes and automatically rebuild them.  This will keep build times small since
  * we don't have to manually rebuild all applications everytime we make even the smallest/most isolated of changes. 
  */
 gulp.task("autobuild", ["housekeeping"], function() {
@@ -305,7 +311,7 @@ gulp.task("autotest", function() {
 
 
 /**
- * Run all automatic jobs.
+ * Run all automatic tasks.
  */
 gulp.task("auto", ["autobuild", "autotest"]);
 
@@ -325,6 +331,6 @@ gulp.task("serial", function() {
 
 
 /**
- * Run all jobs in parallel except for "test," which should always come last because errors therein can really mess up the build output.
+ * Run all tasks in parallel except for "test," which should always come last because errors therein can really mess up the build output.
  */
 gulp.task("default", ["lint", "test", "build-common-lib", "build"]);

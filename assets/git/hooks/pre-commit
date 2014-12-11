@@ -1,0 +1,15 @@
+#!/bin/sh
+exec 1>&2
+
+if [ -e ".autobuild" ]
+then
+	echo "The last build was automatically generated.  You must do a normal build before committing by executing either:"
+	echo "> gulp"
+	echo " or"
+	echo "> gulp build test"
+	echo
+	echo "If you are checking in non-javascript assets, you can ignore this check with:"
+	echo "> git commit -n"
+	exit 1
+fi
+
