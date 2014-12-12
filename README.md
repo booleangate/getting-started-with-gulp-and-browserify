@@ -18,13 +18,21 @@ This project provides the following gulp tasks
 * `test` – Runs all unit tests found in /tests/client.  Assumes TAP output.
 * `autotest` – Watches everything in /applications/client and /tests/client, and auromatically runs all units tests when a change is detected.
 * `auto` – Alias for `gulp autotest autobuild`
-* `housekeeping` – Installs client-side Git hooks and periodically ensures that all npm modules are installed and updated.  This task is a depdency of almost all other tasks to ensure that it's ran.
+* `housekeeping` – Installs client-side Git hooks and periodically ensures that all npm modules are installed and updated.  This task is a depdency of almost all other tasks to ensure that it's ran.  See *Git Hooks* and *NPM Module Management* below.
 * `default` – Runs `lint`, `test`, `build-common-lib`, and `build` asynchronously.
 * `serial` – The same as `default`, but all tasks are run synchronously. This is useful if you have lots of exceptions in the build process or during tests.
 
 ## Git Hooks
 
 * `pre-commit` – Makes sure that automatically built application bundles are not checked in.  Bundles must be built normally (with `gulp` or `gulp build`).  Bundles built automatically with Watching necessarily contain full absolute path information that shouldn't be committed.
+
+
+## NPM Module Management
+
+Whenever a new commit is detected, the Gulp *housekeeping* job will ensure essentiall run `npm install` and `npm-check-updates -u` to ensure that all modules are installed and are current according to the version numbere policy that you have set in package.json.  
+
+This functionality is enabled by default and can be disabled by setting `ALLOW_NPM_MODULE_MANAGEMENT` to false in *gulpfile.js*.
+
 
 # Installing
 
