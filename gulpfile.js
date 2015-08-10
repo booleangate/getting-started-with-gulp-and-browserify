@@ -1,5 +1,5 @@
 /*
- * Gentlemen ... behold! Dependencies! 
+ * Gentlemen ... behold! Dependencies!
  */
 try {
 	var _ = require("lodash");
@@ -21,21 +21,21 @@ try {
 	var util = require("gulp-util");
 	var watchify = require("watchify");
 } catch (e) {
-	// Unknown error, rethrow it.	
+	// Unknown error, rethrow it.
 	if (e.code !== "MODULE_NOT_FOUND") {
 		throw e;
 	}
-	
-	// Otherwise, we have a missing dependency. If the module is in the dependency list, the user just needs to run `npm install`.  
-	// Otherwise, they need to install and save it.  
+
+	// Otherwise, we have a missing dependency. If the module is in the dependency list, the user just needs to run `npm install`.
+	// Otherwise, they need to install and save it.
 	var dependencies = require("./package.json").devDependencies;
 	var module = e.toString().match(/'(.*?)'/)[1];
 	var command = "npm install";
-	
+
 	if (typeof dependencies[module] === "undefined") {
 		command += " --save-dev " + module;
 	}
-	
+
 	console.error(e.toString() + ". Fix this by executing:\n\n" + command + "\n");
 	process.exit(1);
 }
@@ -70,8 +70,8 @@ const LINT_OPTS = {
 const ALLOW_NPM_MODULE_MANAGEMENT = true;
 
 // Always add JS_BASE_DIR to the NODE_PATH environment variable.  This allows us to include our own modules
-// with simple paths (no crazy ../../../../relative/paths) without having to resort to a symlink in node_modules 
-// or other transforms that would add time to our build.  For example, from application/client/apps/login/index.js, 
+// with simple paths (no crazy ../../../../relative/paths) without having to resort to a symlink in node_modules
+// or other transforms that would add time to our build.  For example, from application/client/apps/login/index.js,
 // we can do `require("properties")` instead of `require("../../../properties")`
 process.env.NODE_PATH = JS_BASE_DIR + ":" + (process.env.NODE_PATH || "");
 
@@ -86,7 +86,7 @@ log.enableColor();
 
 /**
  * Get a properly configured bundler for manual (browserify) and automatic (watchify) builds.
- * 
+ *
  * @param {object} file The file to bundle (a Vinyl file object).
  * @param {object|null} options Options passed to browserify.
  */
@@ -97,10 +97,10 @@ function getBundler(file, options) {
 		// Configure transforms.
 		transform: BROWSERIFY_TRANSFORMS
 	});
-	
+
 	// Initialize browserify with the file and options provided.
 	var bundler = browserify(file.path, options);
-	
+
 	// Exclude externalized libs (those from build-common-lib).
 	Object.keys(EXTERNAL_LIBS).forEach(function(lib) {
 		bundler.external(lib);
@@ -112,7 +112,7 @@ function getBundler(file, options) {
 
 /**
  * Build a single application with browserify creating two differnt versions: one normal and one minified.
- * 
+ *
  * @param {object} file The file to bundle (a Vinyl file object).
  * @param {browserify|watchify} bundler  The bundler to use.  The "build" task will use browserify, the "autobuild" task will use watchify.
  */
@@ -122,13 +122,13 @@ function bundle(file, bundler) {
 	//   file.path === "/Users/johnsonj/dev/web/super-project/applications/client/apps/login/reset-password/confirm.js"
 	// then result is "login/reset-password/confirm.js"
 	var relativeFilename = file.path.replace(file.base, "");
-	
+
 	return bundler
 		// Log browserify errors
 		.on("error", util.log.bind(util, "Browserify Error"))
 		// Bundle the application
 		.bundle()
-		// Rename the bundled file to relativeFilename 
+		// Rename the bundled file to relativeFilename
 		.pipe(source(relativeFilename))
 		// Convert stream to a buffer
 		.pipe(buffer())
@@ -150,7 +150,7 @@ function bundle(file, bundler) {
 
 
 /*
- * Gulp tasks 
+ * Gulp tasks
  */
 
 
@@ -158,8 +158,8 @@ function bundle(file, bundler) {
  * Ensure that our project is always setup correctly.  So far this includes two things:
  *  1. Make sure git hooks are installed
  *  2. Make sure npm dependencies are current (optional)
- * 
- * #2 is achieved by keeping track of the last commit ID in which we updated dependencies.  If 
+ *
+ * #2 is achieved by keeping track of the last commit ID in which we updated dependencies.  If
  * the current state of the repo does not have that commit ID, then we will update dependencies
  * and the ID in that file.  It's a naive approach, but it works for now.
  */
@@ -168,44 +168,44 @@ gulp.task("housekeeping", function() {
 	gulp.src("assets/git/hooks/*")
 		.pipe(forEach(function(stream, file) {
 			// The link source must be relative to .git/hooks
-			var src = "../../" + file.path.replace(process.cwd() + "/", ""), 
+			var src = "../../" + file.path.replace(process.cwd() + "/", ""),
 				dest = ".git/hooks/" + file.path.replace(file.base, "");
-				
+
 			// Make sure the hook is executable.
 			shell.chmod("ug+x", file.path);
-	
-			// Don't use `shell.ln("-sf", src, dest);`  This will create the symlink with an absolute path 
+
+			// Don't use `shell.ln("-sf", src, dest);`  This will create the symlink with an absolute path
 			// which will break if you ever move this repo.
 			shell.exec("ln -sf " + src + " " + dest);
 		}));
-	
+
 	// If we are not allowed to manage npm modules, there is nothing else to do.
 	if (!ALLOW_NPM_MODULE_MANAGEMENT) {
 		return;
 	}
-	
+
 	// Get the current repo ID.
 	var currentId = shell.exec("git rev-parse HEAD", {silent: true}).output,
 		lastId = null;
-	
+
 	// Get the last repo ID at which we updated the npm dependencies.
 	try {
 		lastId = file.readFileSync(LAST_DEPENDENCY_UPDATE_ID_FILE);
 	} catch (e) { }
-	
-	// IDs match, nothing to do.	
+
+	// IDs match, nothing to do.
 	if (lastId != null && lastId == currentId) {
 		log.info("housekeeping", "npm dependencies are current since the last commit");
 		return;
 	}
-	
+
 	// IDs do not match, make sure everything is installed and up to date
 	log.info("housekeeping", "Executing `npm install`");
 	shell.exec("npm install");
-	
+
 	log.info("housekeeping", "Executing `npm-check-updates -u`");
 	shell.exec("npm-check-updates -u");
-	
+
 	// Update our ID tracking file.
 	shell.exec("git rev-parse HEAD > " + LAST_DEPENDENCY_UPDATE_ID_FILE, {async: true, silent: true});
 });
@@ -214,16 +214,16 @@ gulp.task("housekeeping", function() {
 /**
  * Externalize all site-wide libraries into one file.  Since these libraries are all sizable, it would be better for the
  * client to request it individually once and then retreive it from the cache than to include all of these files into
- * each and every browserified application. 
+ * each and every browserified application.
  */
 gulp.task("build-common-lib", ["housekeeping"], function() {
 	var paths = [];
-	
+
 	// Get just the path to each externalizable lib.
 	_.forEach(EXTERNAL_LIBS, function(path) {
 		paths.push(path);
 	});
-	
+
 	return gulp.src(paths)
 		// Log each file that will be concatenated into the common.js file
 		.pipe(size(SIZE_OPTS))
@@ -240,42 +240,42 @@ gulp.task("build-common-lib", ["housekeeping"], function() {
 
 /**
  * Browserify and minify each individual application found with APPS_GLOB.  Each file therein represents a separate
- * application and should have its own resultant bundle.  
+ * application and should have its own resultant bundle.
  */
 gulp.task("build", ["housekeeping"], function() {
 	var stream = gulp.src(APPS_GLOB)
 		.pipe(forEach(function(stream, file) {
-			bundle(file, getBundler(file));
+			return bundle(file, getBundler(file));
 		}));
-		
+
 	// A normal build has completed, remove the flag file.
 	shell.rm("-f", AUTOBUILD_FLAG_FILE);
-	
+
 	return stream;
 });
 
 
 /**
  * Watch applications and their dependencies for changes and automatically rebuild them.  This will keep build times small since
- * we don't have to manually rebuild all applications everytime we make even the smallest/most isolated of changes. 
+ * we don't have to manually rebuild all applications everytime we make even the smallest/most isolated of changes.
  */
 gulp.task("autobuild", ["housekeeping"], function() {
 	return gulp.src(APPS_GLOB)
 		.pipe(forEach(function(stream, file) {
 			// Get our bundler just like in the "build" task, but wrap it with watchify and use the watchify default args (options).
 			var bundler = watchify(getBundler(file, watchify.args));
-			
+
 			function rebundle() {
 				// When an automatic build happens, create a flag file so that we can prevent committing these bundles because of
 				// the full paths that they have to include.  A Git pre-commit hook will look for and block commits if this file exists.
 				// A manual build is require before bundled assets can be committed as it will remove this flag file.
 				shell.exec("touch " + AUTOBUILD_FLAG_FILE);
-				
+
 				return bundle(file, bundler);
 			}
-			
+
 			bundler.on("update", rebundle);
-			
+
 			return rebundle();
 		}));
 });
@@ -304,7 +304,7 @@ gulp.task("test", function() {
  */
 gulp.task("autotest", function() {
 	gulp.watch(
-		[JS_BASE_DIR + "**/*.js", TESTS_GLOB], 
+		[JS_BASE_DIR + "**/*.js", TESTS_GLOB],
 		["test"]
 	);
 });
@@ -317,13 +317,13 @@ gulp.task("auto", ["autobuild", "autotest"]);
 
 
 /**
- * The same as the default task, but done serially so that the output doesn't get all jumbled. 
+ * The same as the default task, but done serially so that the output doesn't get all jumbled.
  */
 gulp.task("serial", function() {
 	runSequence(
 		"housekeeping",
 		"build-common-lib",
-		"lint", 
+		"lint",
 		"build",
 		"test"
 	);
